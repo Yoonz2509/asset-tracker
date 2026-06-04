@@ -59,8 +59,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .kpi.accent{border-color:rgba(26,107,196,.25);background:rgba(26,107,196,.04)}
 .kpi.accent .kpi-val{color:#1a6bc4}
 .overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:28px}
-.ov-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s}
+.ov-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative;user-select:none}
+.ov-card.dragging{opacity:.4;border:2px dashed #1a6bc4;background:rgba(26,107,196,.04)}
+.ov-card.drag-over{border:2px solid #1a6bc4;background:rgba(26,107,196,.06);transform:scale(1.02)}
+.drag-handle{position:absolute;top:8px;right:8px;color:var(--text3);font-size:14px;cursor:grab;line-height:1;padding:2px 4px;border-radius:4px;transition:.15s}
+.drag-handle:hover{background:var(--surface2);color:var(--text2)}
+.drag-handle:active{cursor:grabbing}
 .ov-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.ov-card.dragging{opacity:.4;border:2px dashed #1a6bc4 !important;background:rgba(26,107,196,.04)}
+.ov-card.drag-over{border:2px solid #1a6bc4 !important;background:rgba(26,107,196,.06);transform:scale(1.02)}
+.drag-handle{position:absolute;top:8px;right:8px;color:var(--text3);font-size:16px;cursor:grab;padding:2px 4px;border-radius:4px;transition:.15s;line-height:1}
+.drag-handle:hover{background:var(--surface2);color:var(--text2)}
+.ov-card{position:relative}
 .ov-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .ov-name{font-size:13px;font-weight:500}
 .ov-sku{font-size:10px;font-family:var(--mono);color:var(--text3)}
@@ -674,12 +684,20 @@ function renderDashboard(){
     og.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text3)">No products yet.<br><br><button class="btn btn-accent btn-sm" onclick="showView(\'settings\')">+ Add Product</button></div>';
     return;
   }
-  og.innerHTML=db.products.map(p=>{
+  og.innerHTML=db.products.map((p,idx)=>{
     const s=productStats(p);
-    const bc=s.pct===100?'var(--green)':s.pct>50?'var(--accent)':'var(--orange)';
+    const bc=s.pct===100?'var(--green)':s.pct>50?'#1a6bc4':'var(--orange)';
     const types=p.assetTypes||db.assetTypes;
     const dl=db.driveLinks[p.id];
-    return`<div class="ov-card" onclick="showView('products');setTimeout(()=>expandProduct('${p.id}'),80)">
+    return`<div class="ov-card" draggable="true"
+      data-id="${p.id}"
+      ondragstart="dashDragStart(event,'${p.id}')"
+      ondragover="dashDragOver(event)"
+      ondragleave="dashDragLeave(event)"
+      ondrop="dashDrop(event,'${p.id}')"
+      ondragend="dashDragEnd(event)"
+      onclick="showView('products');setTimeout(()=>expandProduct('${p.id}'),80)">
+      <span class="drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</span>
       <div class="ov-top"><div><div class="ov-name">${p.name}</div><div class="ov-sku">${p.sku}</div></div><div class="ov-pct">${s.pct}%</div></div>
       <div class="ov-bar"><div class="ov-bar-fill" style="width:${s.pct}%;background:${bc}"></div></div>
       <div class="ov-chips">
@@ -692,6 +710,39 @@ function renderDashboard(){
       </div>
     </div>`;
   }).join('');
+}
+
+let _dragSrcId=null;
+function dashDragStart(e,id){
+  _dragSrcId=id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function dashDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  e.currentTarget.classList.add('drag-over');
+}
+function dashDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+function dashDrop(e,targetId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(_dragSrcId===targetId)return;
+  const fromIdx=db.products.findIndex(p=>p.id===_dragSrcId);
+  const toIdx=db.products.findIndex(p=>p.id===targetId);
+  if(fromIdx===-1||toIdx===-1)return;
+  // reorder
+  const [moved]=db.products.splice(fromIdx,1);
+  db.products.splice(toIdx,0,moved);
+  save();
+  renderDashboard();
+  renderProducts();
+}
+function dashDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  _dragSrcId=null;
 }
 
 /* ═══════════════════════════════════════════
