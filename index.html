@@ -276,6 +276,7 @@ textarea.form-input{resize:vertical;min-height:70px;font-family:var(--mono);font
         <div class="page-hdr-left"><h2>All Products</h2><p>Color-by-color asset checklist</p></div>
         <button class="btn btn-accent btn-sm" onclick="openProductModal()">+ Add Product</button>
       </div>
+      <div id="category-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
       <div class="product-list" id="product-list"></div>
     </div>
 
@@ -679,10 +680,40 @@ function renderDashboard(){
 /* ═══════════════════════════════════════════
    PRODUCTS VIEW
 ═══════════════════════════════════════════ */
+let _activeCat='all';
 function renderProducts(){
   const list=document.getElementById('product-list');
+  const tabsEl=document.getElementById('category-tabs');
+
+  // build unique categories
+  const cats=['all',...[...new Set(db.products.map(p=>p.category||'').filter(Boolean))].sort()];
+
+  // render tabs
+  if(tabsEl){
+    tabsEl.innerHTML=cats.map(c=>{
+      const isAll=c==='all';
+      const active=_activeCat===c;
+      const col=isAll?null:catColor(c);
+      const bg=active?(isAll?'#1a1a1a':col.color):(isAll?'transparent':col.bg);
+      const color=active?'#fff':(isAll?'var(--text2)':col.color);
+      const border=active?(isAll?'#1a1a1a':col.color):(isAll?'var(--border2)':col.color);
+      const label=isAll?'All':c;
+      const count=isAll?db.products.length:db.products.filter(p=>(p.category||'')=== c).length;
+      return`<button onclick="setCatFilter('${c}')" style="padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${border};background:${bg};color:${color};font-family:var(--font);transition:.15s;display:inline-flex;align-items:center;gap:5px">
+        ${label} <span style="font-size:10px;opacity:.7">${count}</span>
+      </button>`;
+    }).join('');
+  }
+
   if(!db.products.length){list.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3)">No products. Add one in Settings.</div>';return;}
-  list.innerHTML=db.products.map(p=>buildProductRow(p)).join('');
+
+  const filtered=_activeCat==='all'?db.products:db.products.filter(p=>(p.category||'')===_activeCat);
+  if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:32px 0;color:var(--text3)">No products in this category.</div>';return;}
+  list.innerHTML=filtered.map(p=>buildProductRow(p)).join('');
+}
+function setCatFilter(cat){
+  _activeCat=cat;
+  renderProducts();
 }
 
 function buildProductRow(prod){
