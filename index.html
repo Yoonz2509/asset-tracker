@@ -702,7 +702,7 @@ function renderDashboard(){
       <div class="ov-bar"><div class="ov-bar-fill" style="width:${s.pct}%;background:${bc}"></div></div>
       <div class="ov-chips">
         ${p.category?`<span class="chip" style="background:${catColor(p.category).bg};color:${catColor(p.category).color}">${p.category}</span>`:''}
-        <span class="chip chip-photo">📷 ${types.filter(a=>a.type==='photo').length}</span>
+        <span class="chip chip-photo">📷 ${types.filter(a=>a.type==='photo'&&a.scope==='color').length*(p.colors||[]).length+types.filter(a=>a.type==='photo'&&a.scope==='shared').length}</span>
         ${types.some(a=>a.type==='video')?`<span class="chip chip-video">🎬 ${types.filter(a=>a.type==='video').length}</span>`:''}
         <span class="chip chip-done">✓ ${s.done}/${s.total}</span>
         <span class="chip chip-photo">${(p.colors||[]).length} colors</span>
