@@ -437,6 +437,23 @@ const COLOR_HEX = {
 };
 function colorHex(n){const k=n.toLowerCase().replace(/\s+/g,' ').trim();return COLOR_HEX[k]||COLOR_HEX[k.replace(' ','_')]||'#888780';}
 
+/* Category → consistent color based on name hash */
+const CAT_PALETTES = [
+  {bg:'rgba(26,107,196,.12)',color:'#1a5fa8'},   // blue
+  {bg:'rgba(180,71,23,.12)', color:'#a34415'},   // coral
+  {bg:'rgba(26,127,75,.12)', color:'#1a6b40'},   // green
+  {bg:'rgba(127,75,180,.12)',color:'#6b3fa8'},   // purple
+  {bg:'rgba(196,140,26,.12)',color:'#a87a14'},   // amber
+  {bg:'rgba(196,26,100,.12)',color:'#a81460'},   // pink
+  {bg:'rgba(26,170,180,.12)',color:'#0f8a96'},   // teal
+  {bg:'rgba(100,100,100,.12)',color:'#555555'},  // gray
+];
+function catColor(name){
+  if(!name)return CAT_PALETTES[7];
+  let h=0;for(let i=0;i<name.length;i++){h=((h<<5)-h)+name.charCodeAt(i);h|=0;}
+  return CAT_PALETTES[Math.abs(h)%CAT_PALETTES.length];
+}
+
 let db = {
   products:[],
   assetTypes:JSON.parse(JSON.stringify(DEFAULT_ASSET_TYPES)),
@@ -648,6 +665,7 @@ function renderDashboard(){
       <div class="ov-top"><div><div class="ov-name">${p.name}</div><div class="ov-sku">${p.sku}</div></div><div class="ov-pct">${s.pct}%</div></div>
       <div class="ov-bar"><div class="ov-bar-fill" style="width:${s.pct}%;background:${bc}"></div></div>
       <div class="ov-chips">
+        ${p.category?`<span class="chip" style="background:${catColor(p.category).bg};color:${catColor(p.category).color}">${p.category}</span>`:''}
         <span class="chip chip-photo">📷 ${types.filter(a=>a.type==='photo').length}</span>
         ${types.some(a=>a.type==='video')?`<span class="chip chip-video">🎬 ${types.filter(a=>a.type==='video').length}</span>`:''}
         <span class="chip chip-done">✓ ${s.done}/${s.total}</span>
@@ -715,11 +733,12 @@ function buildProductRow(prod){
     <div class="prod-row-hdr" onclick="toggleProduct('${prod.id}')">
       <span class="prod-sku">${prod.sku}</span>
       <span class="prod-name">${prod.name}</span>
-      ${prod.category?`<span class="prod-sku" style="background:rgba(26,107,196,.1);color:#1a6bc4">${prod.category}</span>`:''}
+      ${prod.category?`<span class="prod-sku" style="background:${catColor(prod.category).bg};color:${catColor(prod.category).color}">${prod.category}</span>`:''}
       <span class="prod-meta">${s.done}/${s.total} · ${s.pct}%</span>
       <div class="prod-actions">
         <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:${s.pct}%;background:${bc}"></div></div>
         <button class="btn btn-ghost btn-sm" style="padding:3px 10px;font-size:11px" onclick="event.stopPropagation();editProduct('${prod.id}')">✏ Edit</button>
+        <button class="btn btn-ghost btn-sm" style="padding:3px 10px;font-size:11px" onclick="event.stopPropagation();duplicateProduct('${prod.id}')">⧉ Copy</button>
         <button class="btn btn-danger btn-sm" style="padding:3px 8px;font-size:11px" onclick="event.stopPropagation();deleteProduct('${prod.id}')">✕</button>
         <span class="expand-icon">▾</span>
       </div>
@@ -978,9 +997,11 @@ function renderProdEditorList(){
       <div class="prod-editor-info">
         <div class="prod-editor-name">${p.name}</div>
         <div class="prod-editor-meta">${p.sku} · ${(p.colors||[]).join(', ')} · ${s.done}/${s.total}</div>
+        ${p.category?`<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:${catColor(p.category).bg};color:${catColor(p.category).color};font-family:var(--mono)">${p.category}</span>`:''}
       </div>
       <div class="prod-editor-btns">
         <button class="btn btn-ghost btn-sm" onclick="editProduct('${p.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="duplicateProduct('${p.id}')">⧉ Copy</button>
         <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
       </div>
     </div>`;}).join('');
@@ -1183,6 +1204,25 @@ function saveProduct(){
   renderSettings();renderProducts();renderDashboard();
   updateSidebarStats();
   document.getElementById('nav-prod-count').textContent=db.products.length;
+}
+function duplicateProduct(id){
+  const orig=db.products.find(p=>p.id===id);
+  if(!orig)return;
+  const newId='p'+Date.now();
+  const copy={
+    ...JSON.parse(JSON.stringify(orig)),
+    id:newId,
+    name:orig.name+' (Copy)',
+    sku:orig.sku+'-copy',
+  };
+  db.products.push(copy);
+  save();
+  renderSettings();
+  renderProducts();
+  renderDashboard();
+  updateSidebarStats();
+  document.getElementById('nav-prod-count').textContent=db.products.length;
+  toast('⧉ Product duplicated — edit SKU & name');
 }
 function deleteProduct(id){
   if(!confirm('Delete this product? All check data will be removed.'))return;
