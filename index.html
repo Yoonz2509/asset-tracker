@@ -986,13 +986,48 @@ function renderProdEditorList(){
     </div>`;}).join('');
 }
 function renderAssetTypeList(){
-  document.getElementById('asset-type-list').innerHTML=db.assetTypes.map((at,i)=>
-    `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:13px">${at.type==='photo'?'📷':at.type==='video'?'🎬':'📐'}</span>
-      <span style="flex:1;font-size:12px">${at.name}</span>
-      <span style="font-size:10px;color:var(--text3)">${at.scope==='color'?'Per Color':'Shared'}</span>
-      <button class="btn btn-danger btn-sm" style="padding:2px 8px" onclick="removeAssetType(${i})">✕</button>
-    </div>`).join('');
+  const el=document.getElementById('asset-type-list');
+  if(!el)return;
+  el.innerHTML=db.assetTypes.map((at,i)=>{
+    const typeLabel=at.type==='photo'?'📷':at.type==='video'?'🎬':'📐';
+    const scopeLabel=at.scope==='color'?'Per Color':'Shared';
+    return`<div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border)" id="atrow-${i}">
+      <span style="font-size:13px;flex-shrink:0">${typeLabel}</span>
+      <span style="flex:1;font-size:12px;color:var(--text)">${at.name}</span>
+      <span style="font-size:10px;color:var(--text3);flex-shrink:0">${scopeLabel}</span>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="startEditAssetType(${i})">Edit</button>
+      <button class="btn btn-danger btn-sm" style="padding:2px 8px;flex-shrink:0" onclick="removeAssetType(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+function startEditAssetType(i){
+  const at=db.assetTypes[i];
+  const row=document.getElementById('atrow-'+i);
+  if(!row)return;
+  row.innerHTML=`
+    <input id="atedit-name-${i}" value="${at.name}" style="flex:1;background:var(--surface2);border:1px solid #1a6bc4;border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text);outline:none">
+    <select id="atedit-type-${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:11px;color:var(--text);outline:none">
+      <option value="photo" ${at.type==='photo'?'selected':''}>Photo</option>
+      <option value="video" ${at.type==='video'?'selected':''}>Video</option>
+      <option value="chart" ${at.type==='chart'?'selected':''}>Chart</option>
+    </select>
+    <select id="atedit-scope-${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:11px;color:var(--text);outline:none">
+      <option value="color" ${at.scope==='color'?'selected':''}>Per Color</option>
+      <option value="shared" ${at.scope==='shared'?'selected':''}>Shared</option>
+    </select>
+    <button class="btn btn-accent btn-sm" style="padding:2px 10px;flex-shrink:0" onclick="saveEditAssetType(${i})">Save</button>
+    <button class="btn btn-ghost btn-sm" style="padding:2px 8px;flex-shrink:0" onclick="renderAssetTypeList()">Cancel</button>`;
+  document.getElementById('atedit-name-'+i)?.focus();
+}
+function saveEditAssetType(i){
+  const name=document.getElementById('atedit-name-'+i)?.value.trim();
+  const type=document.getElementById('atedit-type-'+i)?.value;
+  const scope=document.getElementById('atedit-scope-'+i)?.value;
+  if(!name)return;
+  db.assetTypes[i]={...db.assetTypes[i],name,type,scope};
+  save();
+  renderAssetTypeList();
+  toast('Asset type updated');
 }
 function addAssetType(){
   const name=document.getElementById('new-asset-name').value.trim();
