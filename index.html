@@ -403,6 +403,23 @@ textarea.form-input{resize:vertical;min-height:70px;font-family:var(--mono);font
 
 <div class="toast" id="toast"></div>
 
+<!-- RESET CONFIRM MODAL -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+    <div class="modal-title" style="text-align:center">Reset ALL data?</div>
+    <div class="modal-sub" style="text-align:center;margin-top:8px">This will permanently delete all products, checklists, comments, and Drive links — including data saved to Cloudflare KV. <b>This cannot be undone.</b></div>
+    <div style="background:#fff3f3;border:1px solid #fcc;border-radius:8px;padding:12px;margin:16px 0;font-size:13px;color:#a33">
+      Type <b>RESET</b> below to confirm
+    </div>
+    <input id="reset-confirm-input" class="form-input" placeholder="Type RESET here..." oninput="const btn=document.getElementById('reset-confirm-btn');btn.disabled=this.value!=='RESET';btn.style.opacity=this.value==='RESET'?'1':'.5'" style="text-align:center;font-size:15px;font-family:var(--mono);letter-spacing:.1em;margin-bottom:16px">
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-ghost" onclick="document.getElementById('reset-modal').classList.remove('open');document.getElementById('reset-confirm-input').value='';document.getElementById('reset-confirm-btn').disabled=true">Cancel</button>
+      <button id="reset-confirm-btn" class="btn btn-danger" disabled onclick="confirmReset()" style="opacity:.5" onmouseenter="if(!this.disabled)this.style.opacity='1'" onmouseleave="if(!this.disabled)this.style.opacity='1'">Reset Everything</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════
    STATE
@@ -1368,9 +1385,18 @@ function importJSON(){
   };input.click();
 }
 function clearAll(){
-  if(!confirm('Reset ALL data? This cannot be undone.'))return;
+  // open confirm modal instead of simple confirm()
+  document.getElementById('reset-confirm-input').value='';
+  document.getElementById('reset-confirm-btn').disabled=true;
+  document.getElementById('reset-confirm-btn').style.opacity='.5';
+  document.getElementById('reset-modal').classList.add('open');
+}
+function confirmReset(){
+  if(document.getElementById('reset-confirm-input').value!=='RESET')return;
+  document.getElementById('reset-modal').classList.remove('open');
   db={products:[],assetTypes:JSON.parse(JSON.stringify(DEFAULT_ASSET_TYPES)),checks:{},assignees:{},comments:{},driveLinks:{}};
-  save();renderSettings();renderProducts();renderDashboard();updateSidebarStats();toast('All data cleared');
+  save();renderSettings();renderProducts();renderDashboard();updateSidebarStats();
+  toast('All data has been reset');
 }
 function toast(msg){
   const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
