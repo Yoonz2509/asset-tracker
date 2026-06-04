@@ -1093,15 +1093,45 @@ function renderModalAssets(){
   if(!el)return;
   el.innerHTML=modalAssets.map((at,i)=>{
     const typeLabel=at.type==='photo'?'📷':at.type==='video'?'🎬':'📐';
-    const scopeLabel=at.scope==='color'?'per color':'shared';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px">
-      <input type="checkbox" id="mat-${i}" ${at._enabled!==false?'checked':''} onchange="toggleModalAsset(${i})" style="width:15px;height:15px;cursor:pointer;accent-color:#1a6bc4">
-      <span style="font-size:13px">${typeLabel}</span>
-      <span style="flex:1;color:${at._enabled===false?'var(--text3)':'var(--text)'};text-decoration:${at._enabled===false?'line-through':'none'}">${at.name}</span>
-      <span style="font-size:10px;color:var(--text3)">${scopeLabel}</span>
-      ${at._custom?`<button onclick="removeModalAsset(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0">✕</button>`:''}
+    const scopeLabel=at.scope==='color'?'Per Color':'Shared';
+    const disabled=at._enabled===false;
+    return`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px" id="marow-${i}">
+      <input type="checkbox" id="mat-${i}" ${disabled?'':'checked'} onchange="toggleModalAsset(${i})" style="width:15px;height:15px;cursor:pointer;accent-color:#1a6bc4;flex-shrink:0">
+      <span style="font-size:13px;flex-shrink:0">${typeLabel}</span>
+      <span style="flex:1;color:${disabled?'var(--text3)':'var(--text)'};text-decoration:${disabled?'line-through':'none'};font-size:12px">${at.name}</span>
+      <span style="font-size:10px;color:var(--text3);flex-shrink:0">${scopeLabel}</span>
+      <button onclick="startEditModalAsset(${i})" style="background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text2);cursor:pointer;font-size:10px;padding:2px 7px;flex-shrink:0;font-family:var(--font)" onmouseover="this.style.borderColor='#1a6bc4';this.style.color='#1a6bc4'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">Edit</button>
+      <button onclick="removeModalAsset(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 2px;flex-shrink:0" onmouseover="this.style.color='#d93025'" onmouseout="this.style.color='var(--text3)'">✕</button>
     </div>`;
   }).join('');
+}
+function startEditModalAsset(i){
+  const at=modalAssets[i];
+  const row=document.getElementById('marow-'+i);
+  if(!row)return;
+  row.innerHTML=`
+    <input type="checkbox" ${at._enabled!==false?'checked':''} onchange="modalAssets[${i}]._enabled=this.checked" style="width:15px;height:15px;accent-color:#1a6bc4;flex-shrink:0">
+    <input id="maedit-name-${i}" value="${at.name}" style="flex:1;background:var(--surface2);border:1px solid #1a6bc4;border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text);outline:none;min-width:0">
+    <select id="maedit-type-${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-size:11px;color:var(--text);outline:none;flex-shrink:0">
+      <option value="photo" ${at.type==='photo'?'selected':''}>📷 Photo</option>
+      <option value="video" ${at.type==='video'?'selected':''}>🎬 Video</option>
+      <option value="chart" ${at.type==='chart'?'selected':''}>📐 Chart</option>
+    </select>
+    <select id="maedit-scope-${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-size:11px;color:var(--text);outline:none;flex-shrink:0">
+      <option value="color" ${at.scope==='color'?'selected':''}>Per Color</option>
+      <option value="shared" ${at.scope==='shared'?'selected':''}>Shared</option>
+    </select>
+    <button onclick="saveEditModalAsset(${i})" style="background:#1a6bc4;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:11px;padding:3px 9px;flex-shrink:0;font-family:var(--font)">Save</button>
+    <button onclick="renderModalAssets()" style="background:none;border:1px solid var(--border2);border-radius:4px;color:var(--text2);cursor:pointer;font-size:11px;padding:3px 7px;flex-shrink:0;font-family:var(--font)">✕</button>`;
+  document.getElementById('maedit-name-'+i)?.focus();
+}
+function saveEditModalAsset(i){
+  const name=document.getElementById('maedit-name-'+i)?.value.trim();
+  const type=document.getElementById('maedit-type-'+i)?.value;
+  const scope=document.getElementById('maedit-scope-'+i)?.value;
+  if(!name)return;
+  modalAssets[i]={...modalAssets[i],name,type,scope};
+  renderModalAssets();
 }
 function toggleModalAsset(i){
   modalAssets[i]._enabled=document.getElementById('mat-'+i).checked;
