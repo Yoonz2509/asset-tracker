@@ -1,0 +1,6 @@
+name = "gooby-asset-tracker"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "ASSET_TRACKER_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
