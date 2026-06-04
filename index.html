@@ -1004,8 +1004,8 @@ function renderModalTags(){
     sw.appendChild(t);
   });sw.appendChild(si);
 }
-function handleColorTag(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/,$/,'');if(v&&!modalColors.includes(v)){modalColors.push(v);renderModalTags();}else e.target.value='';}}
-function handleSizeTag(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/,$/,'');if(v&&!modalSizes.includes(v)){modalSizes.push(v);renderModalTags();}else e.target.value='';}}
+function handleColorTag(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/,$/,'');if(v&&!modalColors.includes(v)){modalColors.push(v);}e.target.value='';renderModalTags();}}
+function handleSizeTag(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/,$/,'');if(v&&!modalSizes.includes(v)){modalSizes.push(v);}e.target.value='';renderModalTags();}}
 function removeColorTag(i){modalColors.splice(i,1);renderModalTags();}
 function removeSizeTag(i){modalSizes.splice(i,1);renderModalTags();}
 function saveProduct(){
